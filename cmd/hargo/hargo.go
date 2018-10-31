@@ -9,8 +9,8 @@ import (
 	"path/filepath"
 	"time"
 
+	"github.com/DennisRutjes/hargo"
 	log "github.com/Sirupsen/logrus"
-	"github.com/dennisrutjes/hargo"
 	"gopkg.in/urfave/cli.v1"
 )
 

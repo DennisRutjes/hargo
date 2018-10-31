@@ -4,7 +4,6 @@ require (
 	github.com/Sirupsen/logrus v1.0.6
 	github.com/blang/semver v3.5.1+incompatible
 	github.com/davecgh/go-spew v1.1.0
-	github.com/dennisrutjes/hargo v0.1.1
 	github.com/fsnotify/fsnotify v1.4.7 // indirect
 	github.com/golang/protobuf v1.1.0 // indirect
 	github.com/hpcloud/tail v1.0.0 // indirect

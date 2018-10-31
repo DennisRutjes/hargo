@@ -3,7 +3,6 @@ package hargo
 import (
 	"bufio"
 	"fmt"
-	"golang.org/x/net/http/httpguts"
 	"net"
 	"net/http"
 	"net/http/cookiejar"
@@ -12,7 +11,7 @@ import (
 	"time"
 
 	log "github.com/Sirupsen/logrus"
-	client "github.com/influxdata/influxdb/client/v2"
+	"github.com/influxdata/influxdb/client/v2"
 )
 
 var useInfluxDB = true // just in case we can't connect, run tests without recording results
@@ -158,7 +157,7 @@ func processEntries(harfile string, har *Har, wg *sync.WaitGroup, wid int, c cli
 			log.Debug("Writing batch points to InfluxDB...")
 			WritePoints(c, testResults)
 			// reset
-			testResults = make([]TestResult, 0)
+			testResults = make([]map[string]interface{}, 0)
 		}
 
 		iter++
