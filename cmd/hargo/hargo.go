@@ -225,6 +225,7 @@ func main() {
 					}
 
 					tags := c.StringSlice("t")
+
 					if tags == nil {
 						tags = []string{}
 					}

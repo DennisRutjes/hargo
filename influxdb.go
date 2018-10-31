@@ -60,7 +60,11 @@ func WritePoints(c client.Client, tr []map[string]interface{}) error {
 	for i := 0; i < len(tr); i++ {
 		// Create a point and add to batch
 		fields := tr[i]
-		pt, err := client.NewPoint("test_result", nil, fields, time.Now())
+
+		tags := fields["tags"].(map[string]string)
+		delete(fields, "tags")
+
+		pt, err := client.NewPoint("test_result", tags, fields, time.Now())
 
 		if err != nil {
 			log.Fatalln("Error: ", err)

@@ -1,4 +1,4 @@
-module github.com/mrichman/hargo
+module github.com/DennisRutjes/hargo
 
 require (
 	github.com/Sirupsen/logrus v1.0.6

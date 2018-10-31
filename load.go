@@ -89,19 +89,21 @@ func processEntries(harfile string, har *Har, wg *sync.WaitGroup, wid int, c cli
 
 			jar.SetCookies(req.URL, req.Cookies())
 
+			tags := make(map[string]string)
 			// add extra tag entries for influx
 			for _, v := range tags {
-
 				headerValue := req.Header.Get(v)
 				if headerValue != "" {
-					tr[v] = headerValue
+					tags[v] = headerValue
 				}
 				// request values override header values
 				requestValue := req.URL.Query().Get(v)
 				if requestValue != "" {
-					tr[v] = requestValue
+					tags[v] = requestValue
 				}
 			}
+
+			tr["tags"] = tags
 
 			startTime := time.Now()
 			resp, err := httpClient.Do(req)
