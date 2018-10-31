@@ -44,7 +44,7 @@ func NewInfluxDBClient(u url.URL) (client.Client, error) {
 }
 
 // WritePoints inserts data to InfluxDB
-func WritePoints(c client.Client, tr []TestResult) error {
+func WritePoints(c client.Client, tr []map[string]interface{}) error {
 
 	bp, err := client.NewBatchPoints(client.BatchPointsConfig{
 		Database:  db,
@@ -59,16 +59,7 @@ func WritePoints(c client.Client, tr []TestResult) error {
 
 	for i := 0; i < len(tr); i++ {
 		// Create a point and add to batch
-		//tags := map[string]string{"test": "test-results"}
-		fields := map[string]interface{}{
-			"URL":       tr[i].URL,
-			"Status":    tr[i].Status,
-			"StartTime": tr[i].StartTime,
-			"EndTime":   tr[i].EndTime,
-			"Latency":   tr[i].Latency,
-			"Method":    tr[i].Method,
-			"HarFile":   tr[i].HarFile}
-
+		fields := tr[i]
 		pt, err := client.NewPoint("test_result", nil, fields, time.Now())
 
 		if err != nil {

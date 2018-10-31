@@ -3,6 +3,7 @@ package hargo
 import (
 	"bufio"
 	"fmt"
+	"golang.org/x/net/http/httpguts"
 	"net"
 	"net/http"
 	"net/http/cookiejar"
@@ -18,7 +19,7 @@ var useInfluxDB = true // just in case we can't connect, run tests without recor
 
 // LoadTest executes all HTTP requests in order concurrently
 // for a given number of workers.
-func LoadTest(harfile string, r *bufio.Reader, workers int, timeout time.Duration, u url.URL, ignoreHarCookies bool) error {
+func LoadTest(harfile string, r *bufio.Reader, workers int, timeout time.Duration, u url.URL, ignoreHarCookies bool, tags []string) error {
 
 	c, err := NewInfluxDBClient(u)
 
@@ -39,7 +40,7 @@ func LoadTest(harfile string, r *bufio.Reader, workers int, timeout time.Duratio
 
 	for i := 0; i < workers; i++ {
 		wg.Add(workers)
-		go processEntries(harfile, &har, &wg, i, c, ignoreHarCookies)
+		go processEntries(harfile, &har, &wg, i, c, ignoreHarCookies, tags)
 	}
 
 	if waitTimeout(&wg, timeout) {
@@ -51,14 +52,14 @@ func LoadTest(harfile string, r *bufio.Reader, workers int, timeout time.Duratio
 	return nil
 }
 
-func processEntries(harfile string, har *Har, wg *sync.WaitGroup, wid int, c client.Client, ignoreHarCookies bool) {
+func processEntries(harfile string, har *Har, wg *sync.WaitGroup, wid int, c client.Client, ignoreHarCookies bool, tags []string) {
 	defer wg.Done()
 
 	iter := 0
 
 	for {
 
-		testResults := make([]TestResult, 0) // batch results
+		testResults := make([]map[string]interface{}, 0) // batch results
 
 		jar, _ := cookiejar.New(nil)
 
@@ -79,15 +80,29 @@ func processEntries(harfile string, har *Har, wg *sync.WaitGroup, wid int, c cli
 			Jar: jar,
 		}
 
-		for _, entry := range har.Log.Entries {
+		for idx, entry := range har.Log.Entries {
+			tr := make(map[string]interface{})
 
 			msg := fmt.Sprintf("[%d,%d] %s", wid, iter, entry.Request.URL)
 
 			req, err := EntryToRequest(&entry, ignoreHarCookies)
-
 			check(err)
 
 			jar.SetCookies(req.URL, req.Cookies())
+
+			// add extra tag entries for influx
+			for _, v := range tags {
+
+				headerValue := req.Header.Get(v)
+				if headerValue != "" {
+					tr[v] = headerValue
+				}
+				// request values override header values
+				requestValue := req.URL.Query().Get(v)
+				if requestValue != "" {
+					tr[v] = requestValue
+				}
+			}
 
 			startTime := time.Now()
 			resp, err := httpClient.Do(req)
@@ -95,16 +110,18 @@ func processEntries(harfile string, har *Har, wg *sync.WaitGroup, wid int, c cli
 			latency := int(endTime.Sub(startTime) / time.Millisecond)
 			method := req.Method
 
+			req.URL.Query()
+
 			if err != nil {
 				log.Error(err)
-				tr := TestResult{
-					URL:       req.URL.String(),
-					Status:    0,
-					StartTime: startTime,
-					EndTime:   endTime,
-					Latency:   latency,
-					Method:    method,
-					HarFile:   harfile}
+
+				tr["URL"] = req.URL.String()
+				tr["Status"] = 0
+				tr["StartTime"] = startTime
+				tr["EndTime"] = endTime
+				tr["Latency"] = latency
+				tr["Method"] = method
+				tr["HarFile"] = harfile
 
 				testResults = append(testResults, tr)
 
@@ -119,21 +136,29 @@ func processEntries(harfile string, har *Har, wg *sync.WaitGroup, wid int, c cli
 
 			log.Debug(msg)
 
-			tr := TestResult{
-				URL:       req.URL.String(),
-				Status:    resp.StatusCode,
-				StartTime: startTime,
-				EndTime:   endTime,
-				Latency:   latency,
-				Method:    method,
-				HarFile:   harfile}
+			tr["URL"] = req.URL.String()
+			tr["Status"] = resp.StatusCode
+			tr["StartTime"] = startTime
+			tr["EndTime"] = endTime
+			tr["Latency"] = latency
+			tr["Method"] = method
+			tr["HarFile"] = harfile
 
 			testResults = append(testResults, tr)
+
+			if useInfluxDB && idx%50 == 0 {
+				log.Debug("Writing batch points to InfluxDB...")
+				WritePoints(c, testResults)
+				// reset
+				testResults = make([]map[string]interface{}, 0)
+			}
 		}
 
 		if useInfluxDB {
 			log.Debug("Writing batch points to InfluxDB...")
-			go WritePoints(c, testResults)
+			WritePoints(c, testResults)
+			// reset
+			testResults = make([]TestResult, 0)
 		}
 
 		iter++

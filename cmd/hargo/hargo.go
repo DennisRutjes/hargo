@@ -10,7 +10,7 @@ import (
 	"time"
 
 	log "github.com/Sirupsen/logrus"
-	"github.com/mrichman/hargo"
+	"github.com/dennisrutjes/hargo"
 	"gopkg.in/urfave/cli.v1"
 )
 
@@ -192,6 +192,9 @@ func main() {
 				cli.BoolFlag{
 					Name:  "ignore-har-cookies",
 					Usage: "Ignore the cookies provided by the HAR entries"},
+				cli.StringSliceFlag{
+					Name:  "tag, t",
+					Usage: "Adds header/request param values to influxDB entry"},
 			},
 			Action: func(c *cli.Context) {
 
@@ -221,7 +224,12 @@ func main() {
 						os.Exit(-1)
 					}
 
-					hargo.LoadTest(filepath.Base(harFile), r, workers, time.Duration(duration)*time.Second, *u, ignoreHarCookies)
+					tags := c.StringSlice("t")
+					if tags == nil {
+						tags = []string{}
+					}
+
+					hargo.LoadTest(filepath.Base(harFile), r, workers, time.Duration(duration)*time.Second, *u, ignoreHarCookies, tags)
 				} else {
 					log.Fatal("Cannot open file: ", harFile)
 					os.Exit(-1)

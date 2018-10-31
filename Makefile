@@ -11,6 +11,12 @@ DATE = $(shell go run tools/build-date.go)
 
 GOBIN ?= $($GOPATH)/bin
 
+
+export HASH=$(shell git rev-parse --short HEAD)
+export VERSION=$(shell git rev-parse HEAD)
+export DATE=$(shell go run tools/build-date.go)
+
+
 # Builds hargo after checking dependencies
 build: deps
 	go build -ldflags "-s -w -X main.Version=$(VERSION) -X main.CommitHash=$(HASH) -X 'main.CompileDate=$(DATE)'" -o hargo ./cmd/hargo
