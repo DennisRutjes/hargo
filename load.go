@@ -18,9 +18,9 @@ var useInfluxDB = true // just in case we can't connect, run tests without recor
 
 // LoadTest executes all HTTP requests in order concurrently
 // for a given number of workers.
-func LoadTest(harfile string, r *bufio.Reader, workers int, timeout time.Duration, u url.URL, ignoreHarCookies bool, tags []string) error {
+func LoadTest(harfile string, r *bufio.Reader, workers int, timeout time.Duration, u url.URL, ignoreHarCookies bool, tags []string, user string, password string) error {
 
-	c, err := NewInfluxDBClient(u)
+	c, err := NewInfluxDBClient(u, user, password)
 
 	if err != nil {
 		useInfluxDB = false

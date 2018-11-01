@@ -13,14 +13,12 @@ import (
 var db string
 
 // NewInfluxDBClient returns a new InfluxDB client
-func NewInfluxDBClient(u url.URL) (client.Client, error) {
+func NewInfluxDBClient(u url.URL, user string, password string) (client.Client, error) {
 
 	addr := fmt.Sprintf("%s://%s:%s", u.Scheme, u.Hostname(), u.Port())
 	log.Print("Connecting to InfluxDB: ", addr)
 
-	c, err := client.NewHTTPClient(client.HTTPConfig{
-		Addr: addr,
-	})
+	c, err := client.NewHTTPClient(funcName(addr))
 
 	if err != nil {
 		log.Fatal("Error: ", err)
@@ -41,6 +39,21 @@ func NewInfluxDBClient(u url.URL) (client.Client, error) {
 		return nil, err
 	}
 	return c, nil
+}
+
+func funcName(addr string, user string, password string) client.HTTPConfig {
+
+	if user != "" && password != "" {
+		return client.HTTPConfig{
+			Addr:     addr,
+			Username: user,
+			Password: password,
+		}
+	}
+
+	return client.HTTPConfig{
+		Addr: addr,
+	}
 }
 
 // WritePoints inserts data to InfluxDB

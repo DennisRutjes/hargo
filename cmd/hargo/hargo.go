@@ -189,6 +189,12 @@ func main() {
 					Name:  "influxurl, u",
 					Value: "http://localhost:8086/hargo",
 					Usage: "InfluxDB URL (default http://localhost:8086/hargo)"},
+				cli.StringFlag{
+					Name:  "user",
+					Usage: "InfluxDB  user"},
+				cli.StringFlag{
+					Name:  "password",
+					Usage: "InfluxDB  password"},
 				cli.BoolFlag{
 					Name:  "ignore-har-cookies",
 					Usage: "Ignore the cookies provided by the HAR entries"},
@@ -230,7 +236,11 @@ func main() {
 						tags = []string{}
 					}
 
-					hargo.LoadTest(filepath.Base(harFile), r, workers, time.Duration(duration)*time.Second, *u, ignoreHarCookies, tags)
+					user := c.String("user")
+
+					password := c.String("password")
+
+					hargo.LoadTest(filepath.Base(harFile), r, workers, time.Duration(duration)*time.Second, *u, ignoreHarCookies, tags, user, password)
 				} else {
 					log.Fatal("Cannot open file: ", harFile)
 					os.Exit(-1)
