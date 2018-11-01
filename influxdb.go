@@ -18,7 +18,7 @@ func NewInfluxDBClient(u url.URL, user string, password string) (client.Client, 
 	addr := fmt.Sprintf("%s://%s:%s", u.Scheme, u.Hostname(), u.Port())
 	log.Print("Connecting to InfluxDB: ", addr)
 
-	c, err := client.NewHTTPClient(funcName(addr))
+	c, err := client.NewHTTPClient(createConfig(addr, user, password))
 
 	if err != nil {
 		log.Fatal("Error: ", err)
@@ -41,7 +41,7 @@ func NewInfluxDBClient(u url.URL, user string, password string) (client.Client, 
 	return c, nil
 }
 
-func funcName(addr string, user string, password string) client.HTTPConfig {
+func createConfig(addr string, user string, password string) client.HTTPConfig {
 
 	if user != "" && password != "" {
 		return client.HTTPConfig{
