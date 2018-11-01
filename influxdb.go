@@ -18,7 +18,7 @@ func NewInfluxDBClient(u url.URL, user string, password string) (client.Client, 
 	path := u.Path
 	idx := strings.LastIndex(path, "/")
 
-	addr := path[0:idx]
+	addr := fmt.Sprintf("%s://%s:%s%s", u.Scheme, u.Hostname(), u.Port(), path[0:idx])
 
 	log.Print("Connecting to InfluxDB: ", addr)
 
@@ -29,7 +29,7 @@ func NewInfluxDBClient(u url.URL, user string, password string) (client.Client, 
 		return c, err
 	}
 
-	db = path[idx:]
+	db = path[idx+1:]
 
 	log.Info("DB: ", db)
 
